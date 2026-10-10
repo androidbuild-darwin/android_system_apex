@@ -124,14 +124,15 @@ def InitTools(tool_path):
       )
     tool_path = os.path.dirname(os.path.dirname(exec_path))
 
-  def ToolPath(name):
+  def ToolPath(name, required=True):
     path = os.path.join(tool_path, 'bin', name)
-    if not os.path.exists(path):
+    if os.path.exists(path):
+      return path
+    if required:
       sys.exit(f'Required tool({name}) not found in {tool_path}')
-    return path
 
   return {
-      tool: ToolPath(tool)
+      tool: ToolPath(tool, required=tool != 'fsck.erofs')
       for tool in [
           'deapexer',
           'debugfs_static',
@@ -169,7 +170,8 @@ def ActivateApexes(partitions, apex_dir, tools):
 
       cmd = [tools['deapexer']]
       cmd += ['--debugfs_path', tools['debugfs_static']]
-      cmd += ['--fsckerofs_path', tools['fsck.erofs']]
+      if tools['fsck.erofs']:
+        cmd += ['--fsckerofs_path', tools['fsck.erofs']]
       cmd += [
           'extract',
           apex_file.path_on_host,
