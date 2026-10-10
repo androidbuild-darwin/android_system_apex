@@ -255,6 +255,11 @@ class Apex(object):
 
   def extract(self, dest):
     if self._payload_fs_type == 'erofs':
+      if not self._fsckerofs:
+        sys.exit('ANDROID_HOST_OUT environment variable is not defined, '
+                 '--fsckerofs_path must be set for EROFS extraction')
+      if not os.path.isfile(self._fsckerofs):
+        sys.exit(f'Cannot find fsck.erofs specified at {self._fsckerofs}')
       subprocess.run([self._fsckerofs, '--extract=%s' % (dest), '--overwrite', self._payload],
                      stdout=subprocess.DEVNULL, check=True)
     elif self._payload_fs_type == 'ext4':
@@ -433,17 +438,6 @@ def main(argv):
     print('ANDROID_HOST_OUT environment variable is not defined, --debugfs_path must be set',
           file=sys.stderr)
     sys.exit(1)
-
-  if args.cmd == 'extract':
-    if not args.fsckerofs_path:
-      print('ANDROID_HOST_OUT environment variable is not defined, --fsckerofs_path must be set',
-            file=sys.stderr)
-      sys.exit(1)
-
-    if not os.path.isfile(args.fsckerofs_path):
-      print(f'Cannot find fsck.erofs specified at {args.fsckerofs_path}',
-            file=sys.stderr)
-      sys.exit(1)
 
   args.func(args)
 

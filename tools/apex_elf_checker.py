@@ -62,15 +62,16 @@ def InitTools(tool_path):
       )
     tool_path = os.environ['PATH']
 
-  def ToolPath(name):
+  def ToolPath(name, required=True):
     for p in tool_path.split(':'):
       path = os.path.join(p, name)
       if os.path.exists(path):
         return path
-    sys.exit(f'Required tool({name}) not found in {tool_path}')
+    if required:
+      sys.exit(f'Required tool({name}) not found in {tool_path}')
 
   return {
-      tool: ToolPath(tool)
+      tool: ToolPath(tool, required=tool != 'fsck.erofs')
       for tool in [
           'deapexer',
           'debugfs_static',
@@ -115,13 +116,11 @@ def ScanElfFiles(work_dir):
 
 def CheckElfFiles(args, tools):
   with tempfile.TemporaryDirectory() as work_dir:
+    extract_cmd = [tools['deapexer'], '--debugfs_path', tools['debugfs_static']]
+    if tools['fsck.erofs']:
+      extract_cmd += ['--fsckerofs_path', tools['fsck.erofs']]
     subprocess.check_output(
-        [
-            tools['deapexer'],
-            '--debugfs_path',
-            tools['debugfs_static'],
-            '--fsckerofs_path',
-            tools['fsck.erofs'],
+        extract_cmd + [
             'extract',
             args.apex,
             work_dir,
